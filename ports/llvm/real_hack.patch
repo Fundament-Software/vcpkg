@@ -1,0 +1,15 @@
+diff --git a/llvm/lib/ExecutionEngine/Orc/Core.cpp b/llvm/lib/ExecutionEngine/Orc/Core.cpp
+index 12a501f7f..7f3da3538 100644
+--- a/llvm/lib/ExecutionEngine/Orc/Core.cpp
++++ b/llvm/lib/ExecutionEngine/Orc/Core.cpp
+@@ -1592,7 +1592,9 @@ Error JITDylib::defineImpl(MaterializationUnit &MU) {
+     auto I = Symbols.find(KV.first);
+ 
+     if (I != Symbols.end()) {
+-      if (KV.second.isStrong()) {
++      if (!(*KV.first).startswith("__real@") &&
++          !(*KV.first).startswith("__xmm@") &&
++          !(*KV.first).startswith("__ymm@") && KV.second.isStrong()) {
+         if (I->second.getFlags().isStrong() ||
+             I->second.getState() > SymbolState::NeverSearched)
+           Duplicates.insert(KV.first);

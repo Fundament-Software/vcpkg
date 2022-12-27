@@ -1,0 +1,43 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -31,8 +31,23 @@ endif()
+ option(WITH_SYSTEM_LIBUV "Link to a system libuv library instead of bundling" OFF)
+ 
+ if (WITH_SYSTEM_LIBUV)
+-  find_package(LibUV REQUIRED)
++  find_package(LibUV CONFIG REQUIRED)
+   include_directories(${LIBUV_INCLUDE_DIR})
++  set(LIBUV_LIBRARIES $<IF:$<TARGET_EXISTS:uv_a>,uv_a,uv>)
++  
++if(WIN32)
++  list(APPEND LIBUV_LIBRARIES iphlpapi)
++  list(APPEND LIBUV_LIBRARIES psapi)
++  list(APPEND LIBUV_LIBRARIES userenv)
++  list(APPEND LIBUV_LIBRARIES ws2_32)
++endif()
++
++  get_cmake_property(_variableNames VARIABLES)
++list (SORT _variableNames)
++foreach (_variableName ${_variableNames})
++    message(STATUS "${_variableName}=${${_variableName}}")
++endforeach()
++
+ else (WITH_SYSTEM_LIBUV)
+   include(FetchContent)
+   ## https://libuv.org
+@@ -150,4 +165,12 @@ message(STATUS "summary of uvwasi build options:
+     Code coverage:   ${CODE_COVERAGE}
+     ASAN:            ${ASAN}
+     Build tests:     ${UVWASI_BUILD_TESTS}
+-")
+\ No newline at end of file
++")
++
++set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
++set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
++
++install(TARGETS uvwasi uvwasi_a
++        RUNTIME DESTINATION ${INSTALL_BIN_DIR}
++        ARCHIVE DESTINATION ${INSTALL_LIB_DIR}
++        LIBRARY DESTINATION ${INSTALL_LIB_DIR}  )
+\ No newline at end of file

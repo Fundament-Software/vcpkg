@@ -1,0 +1,11 @@
+{
+  "default": {
+    "feathergui": { "baseline": "0.1.0", "port-version": 0 },
+    "innative": { "baseline": "0.2.0", "port-version": 0 },
+    "llvm": { "baseline": "13.0.0", "port-version": 5 },
+    "mimalloc": { "baseline": "2.0.6", "port-version": 1 },
+    "scopes": { "baseline": "0.18", "port-version": 0 },
+    "spirv-tools": { "baseline": "2022.4", "port-version": 0 },
+    "uvwasi": { "baseline": "0.0.14", "port-version": 0 }
+  }
+}

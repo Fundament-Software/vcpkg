@@ -1,0 +1,38 @@
+diff --git a/ide/vs2019/mimalloc.vcxproj b/ide/vs2019/mimalloc.vcxproj
+index e18db0c..cdf2a0e 100644
+--- a/ide/vs2019/mimalloc.vcxproj
++++ b/ide/vs2019/mimalloc.vcxproj
+@@ -171,7 +171,7 @@
+       <FunctionLevelLinking>true</FunctionLevelLinking>
+       <ConformanceMode>true</ConformanceMode>
+       <AdditionalIncludeDirectories>../../include</AdditionalIncludeDirectories>
+-      <PreprocessorDefinitions>%(PreprocessorDefinitions);NDEBUG</PreprocessorDefinitions>
++      <PreprocessorDefinitions>%(PreprocessorDefinitions);NDEBUG;MI_MALLOC_OVERRIDE</PreprocessorDefinitions>
+       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
+       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+       <WholeProgramOptimization>false</WholeProgramOptimization>
+@@ -180,6 +180,7 @@
+       <CompileAs>CompileAsCpp</CompileAs>
+       <IntrinsicFunctions>true</IntrinsicFunctions>
+       <LanguageStandard>Default</LanguageStandard>
++      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+     </ClCompile>
+     <Link>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+diff --git a/src/alloc-override.c b/src/alloc-override.c
+index a09153c..e9344ed 100644
+--- a/src/alloc-override.c
++++ b/src/alloc-override.c
+@@ -10,10 +10,10 @@ terms of the MIT license. A copy of the license can be found in the file
+ #endif
+ 
+ #if defined(MI_MALLOC_OVERRIDE) && defined(_WIN32) && !(defined(MI_SHARED_LIB) && defined(_DLL))
+-#error "It is only possible to override "malloc" on Windows when building as a DLL (and linking the C runtime as a DLL)"
++//#error "It is only possible to override "malloc" on Windows when building as a DLL (and linking the C runtime as a DLL)"
+ #endif
+ 
+-#if defined(MI_MALLOC_OVERRIDE) && !(defined(_WIN32)) 
++#if defined(MI_MALLOC_OVERRIDE) //&& !(defined(_WIN32)) 
+ 
+ #if defined(__APPLE__)
+ #include <AvailabilityMacros.h>

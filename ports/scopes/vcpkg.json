@@ -1,0 +1,63 @@
+{
+  "name": "scopes",
+  "version": "0.18",
+  "description": "Scopes Lang",
+  "homepage": "https://sr.ht/~duangle/scopes/",
+  "license": "MIT",
+  "dependencies": [
+    { 
+      "name": "llvm",
+      "default-features": false,
+      "features": ["clang","enable-zlib","target-webassembly","target-x86","target-aarch64","target-riscv","polly", "disable-assertions", "disable-clang-static-analyzer", "enable-bindings", "enable-terminfo"],
+      "version>=": "13.0.0"
+    },
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    "spirv-cross",
+    "spirv-headers",
+    "spirv-tools",
+    "zlib",
+    "abseil"
+  ],
+  "default-features": ["target-webassembly"],
+  "features": {
+    "enable-address-sanitizer": {
+      "description": "Enables clang's address-sanitizer when compiling scopes"
+    },
+    "target-webassembly": {
+      "description": "Enables the WebAssembly architecture target"
+    },
+    "target-aarch64": {
+      "description": "Enables the AArch64 architecture target"
+    },
+    "target-riscv": {
+      "description": "Enables the RISC-V architecture target"
+    },
+    "use-mimalloc": {
+      "description": "Replace the default CRT allocator with mimalloc",
+      
+      "dependencies": [
+        {
+          "name": "mimalloc",
+          "features": [
+            "override"
+          ]
+        },
+        {
+          "name": "llvm",
+          "default-features": false,
+          "features": ["clang","enable-zlib","target-webassembly","target-x86","target-aarch64","target-riscv","polly", "disable-assertions", "disable-clang-static-analyzer", "enable-bindings", "enable-terminfo", "use-mimalloc"]
+        }
+      ]
+    }
+  },
+  "overrides":
+  [
+    {
+      "name": "llvm",
+      "version": "13.0.0"
+    }
+  ]
+}
