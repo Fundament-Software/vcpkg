@@ -9,7 +9,7 @@ To use this in manifest mode, create a file in the root of your project (next to
         {
           "kind": "git",
           "repository": "https://github.com/Fundament-Software/vcpkg",
-          "baseline": "347c7b2cb8cc1d9d37eff02d6a8a6b2730fea5d9",
+          "baseline": "4bb823e646f2fb97119f4d2804311d6456e2ad26",
           "packages": [ "feathergui", "innative", "llvm", "mimalloc", "scopes", "spirv-tools", "uvwasi" ]
         }
       ]
