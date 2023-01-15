@@ -1,5 +1,6 @@
 {
   "default": {
+    "capnproto": { "baseline": "0.11.0", "port-version": 0 },
     "feathergui": { "baseline": "0.1.0", "port-version": 0 },
     "innative": { "baseline": "0.2.0", "port-version": 0 },
     "llvm": { "baseline": "13.0.0", "port-version": 5 },
