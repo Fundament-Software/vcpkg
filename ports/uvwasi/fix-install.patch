@@ -1,6 +1,13 @@
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -31,8 +31,23 @@ endif()
+@@ -1,5 +1,6 @@
+ cmake_minimum_required(VERSION 3.11)
+ project (uvwasi LANGUAGES C)
++option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+ 
+ # Point CMake at any custom modules we may ship
+ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+@@ -31,8 +32,17 @@ endif()
  option(WITH_SYSTEM_LIBUV "Link to a system libuv library instead of bundling" OFF)
  
  if (WITH_SYSTEM_LIBUV)
@@ -16,28 +23,147 @@
 +  list(APPEND LIBUV_LIBRARIES ws2_32)
 +endif()
 +
-+  get_cmake_property(_variableNames VARIABLES)
-+list (SORT _variableNames)
-+foreach (_variableName ${_variableNames})
-+    message(STATUS "${_variableName}=${${_variableName}}")
-+endforeach()
-+
  else (WITH_SYSTEM_LIBUV)
    include(FetchContent)
    ## https://libuv.org
-@@ -150,4 +165,12 @@ message(STATUS "summary of uvwasi build options:
-     Code coverage:   ${CODE_COVERAGE}
+@@ -92,51 +102,59 @@ if(ASAN AND CMAKE_C_COMPILER_ID MATCHES "AppleClang|GNU|Clang")
+     set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+ endif()
+ 
+-## Static library target.
+-add_library(uvwasi_a STATIC ${uvwasi_sources})
+-target_compile_definitions(uvwasi_a PRIVATE ${uvwasi_defines})
+-target_compile_options(uvwasi_a PRIVATE ${uvwasi_cflags})
+-target_include_directories(uvwasi_a PRIVATE ${PROJECT_SOURCE_DIR}/include)
+-if(CODE_COVERAGE)
+-    target_link_libraries(uvwasi_a PUBLIC ${LIBUV_LIBRARIES} coverage_config)
+-else()
+-    target_link_libraries(uvwasi_a PRIVATE ${LIBUV_LIBRARIES})
+-endif()
++if(NOT BUILD_SHARED_LIBS)
++  ## Static library target.
++  add_library(uvwasi_a STATIC ${uvwasi_sources})
++  target_compile_definitions(uvwasi_a PRIVATE ${uvwasi_defines})
++  target_compile_options(uvwasi_a PRIVATE ${uvwasi_cflags})
++  target_include_directories(uvwasi_a PUBLIC  
++      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>  
++      $<INSTALL_INTERFACE:include>
++  )
++  if(CODE_COVERAGE)
++      target_link_libraries(uvwasi_a PUBLIC ${LIBUV_LIBRARIES} coverage_config)
++  else()
++      target_link_libraries(uvwasi_a PRIVATE ${LIBUV_LIBRARIES})
++  endif()
+ 
+-## Shared library target.
+-add_library(uvwasi SHARED ${uvwasi_sources})
+-target_compile_definitions(uvwasi PRIVATE ${uvwasi_defines})
+-target_compile_options(uvwasi PRIVATE ${uvwasi_cflags})
+-target_include_directories(uvwasi PRIVATE ${PROJECT_SOURCE_DIR}/include)
+-if(CODE_COVERAGE)
+-    target_link_libraries(uvwasi PUBLIC ${LIBUV_LIBRARIES} coverage_config)
++  ## Test targets.
++  if(UVWASI_BUILD_TESTS)
++      enable_testing()
++      file(GLOB test_files "test/test-*.c")
++      foreach(file ${test_files})
++          get_filename_component(test_name ${file} NAME_WE)
++          add_executable(${test_name} ${file})
++          add_test(NAME ${test_name}
++                      COMMAND ${test_name})
++          target_include_directories(${test_name}
++                                      PRIVATE
++                                      ${PROJECT_SOURCE_DIR}/include)
++          target_link_libraries(${test_name} PRIVATE ${LIBUV_LIBRARIES} uvwasi_a)
++          list(APPEND test_list ${test_name})
++      endforeach()
++
++      add_custom_target(check
++          COMMAND ctest -VV -C Debug -R test-
++          DEPENDS ${test_list}
++      )
++  endif()
+ else()
+-    target_link_libraries(uvwasi PRIVATE ${LIBUV_LIBRARIES})
++  ## Shared library target.
++  add_library(uvwasi_s SHARED ${uvwasi_sources})
++  target_compile_definitions(uvwasi PRIVATE ${uvwasi_defines})
++  target_compile_options(uvwasi PRIVATE ${uvwasi_cflags})
++  target_include_directories(uvwasi PUBLIC  
++      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>  
++      $<INSTALL_INTERFACE:include>
++  )
++  if(CODE_COVERAGE)
++      target_link_libraries(uvwasi PUBLIC ${LIBUV_LIBRARIES} coverage_config)
++  else()
++      target_link_libraries(uvwasi PRIVATE ${LIBUV_LIBRARIES})
++  endif()
+ endif()
+ 
+ 
+-## Test targets.
+-if(UVWASI_BUILD_TESTS)
+-    enable_testing()
+-    file(GLOB test_files "test/test-*.c")
+-    foreach(file ${test_files})
+-        get_filename_component(test_name ${file} NAME_WE)
+-        add_executable(${test_name} ${file})
+-        add_test(NAME ${test_name}
+-                    COMMAND ${test_name})
+-        target_include_directories(${test_name}
+-                                    PRIVATE
+-                                    ${PROJECT_SOURCE_DIR}/include)
+-        target_link_libraries(${test_name} PRIVATE ${LIBUV_LIBRARIES} uvwasi_a)
+-        list(APPEND test_list ${test_name})
+-    endforeach()
+-
+-    add_custom_target(check
+-        COMMAND ctest -VV -C Debug -R test-
+-        DEPENDS ${test_list}
+-    )
+-endif()
+-
+ message(STATUS "summary of uvwasi build options:
+ 
+     Install prefix:  ${CMAKE_INSTALL_PREFIX}
+@@ -151,3 +169,40 @@ message(STATUS "summary of uvwasi build options:
      ASAN:            ${ASAN}
      Build tests:     ${UVWASI_BUILD_TESTS}
--")
-\ No newline at end of file
-+")
+ ")
 +
 +set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
 +set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
++set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation directory for headers")
 +
-+install(TARGETS uvwasi uvwasi_a
++if(NOT BUILD_SHARED_LIBS)
++  install(TARGETS uvwasi_a
++          EXPORT uvwasiTargets
++          RUNTIME DESTINATION ${INSTALL_BIN_DIR}
++          ARCHIVE DESTINATION ${INSTALL_LIB_DIR}
++          LIBRARY DESTINATION ${INSTALL_LIB_DIR}  
++          INCLUDES DESTINATION ${INSTALL_INC_DIR} )
++else()
++  install(TARGETS uvwasi
++        EXPORT uvwasiTargets
 +        RUNTIME DESTINATION ${INSTALL_BIN_DIR}
 +        ARCHIVE DESTINATION ${INSTALL_LIB_DIR}
-+        LIBRARY DESTINATION ${INSTALL_LIB_DIR}  )
-\ No newline at end of file
++        LIBRARY DESTINATION ${INSTALL_LIB_DIR}  
++        INCLUDES DESTINATION ${INSTALL_INC_DIR} )
++endif()
++        
++install(EXPORT uvwasiTargets
++        FILE uvwasiTargets.cmake
++        NAMESPACE uvwasi::
++        DESTINATION share/uvwasi
++)
++
++include(CMakePackageConfigHelpers)
++configure_package_config_file(
++  "${CMAKE_CURRENT_SOURCE_DIR}/uvwasiConfig.cmake.in"
++  "${CMAKE_CURRENT_BINARY_DIR}/uvwasiConfig.cmake"
++  INSTALL_DESTINATION "share/uvwasi"
++)
++install(
++  FILES "${CMAKE_CURRENT_BINARY_DIR}/uvwasiConfig.cmake"
++  DESTINATION "share/uvwasi"
++)

@@ -1,3 +1,8 @@
+if (VCPKG_LIBRARY_LINKAGE STREQUAL dynamic)
+    message(STATUS "Warning: Dynamic building not supported yet. Building static.")
+    set(VCPKG_LIBRARY_LINKAGE static)
+endif()
+
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO nodejs/uvwasi
@@ -7,6 +12,8 @@ vcpkg_from_github(
     PATCHES
         fix-install.patch
 )
+
+file(COPY "${CMAKE_CURRENT_LIST_DIR}/uvwasiConfig.cmake.in" DESTINATION "${SOURCE_PATH}")
 
 vcpkg_check_features(
     OUT_FEATURE_OPTIONS FEATURE_OPTIONS
@@ -24,13 +31,14 @@ vcpkg_cmake_configure(
         -DWITH_SYSTEM_LIBUV=ON
 )
 
-vcpkg_cmake_install()
+vcpkg_cmake_install()  
+vcpkg_copy_pdbs()
+vcpkg_cmake_config_fixup()
+vcpkg_fixup_pkgconfig()
 
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
     file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/bin" "${CURRENT_PACKAGES_DIR}/debug/bin")
 endif()
-
-vcpkg_copy_pdbs()
 
 file(INSTALL ${SOURCE_PATH}/include DESTINATION ${CURRENT_PACKAGES_DIR} )
 file(INSTALL ${SOURCE_PATH}/LICENSE DESTINATION ${CURRENT_PACKAGES_DIR}/share/${PORT} RENAME copyright)
